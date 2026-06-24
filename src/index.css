@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap');
+
+:root, [data-theme="dark"] {
+  --volt: #C8F04A;
+  --bg: #000000;
+  --surface: #0d0d0d;
+  --card: #141414;
+  --border: #2a2a2a;
+  --text: #ffffff;
+  --text2: #cccccc;
+  --muted: #666666;
+  --swoosh: #C8F04A;
+  --header-bg: #000000;
+  --header-border: #1a1a1a;
+  --tooltip-bg: #1a1a1a;
+  --tooltip-border: #333333;
+  --tooltip-label: #aaaaaa;
+  --row-alt: #0a0a0a;
+  --row-hover: #161616;
+  --row-selected: #1a2a00;
+  --select-bg: #1a1a1a;
+  --select-border: #333333;
+  --page-active-bg: #C8F04A;
+  --page-active-text: #000000;
+  --page-btn-bg: #1a1a1a;
+  --metric-value: #C8F04A;
+  --chart-grid: #2a2a2a;
+  --y2025: #8A8A8A;
+  --y2026: #C8F04A;
+  --font-head: 'Barlow Condensed', sans-serif;
+  --font-body: 'Barlow', sans-serif;
+}
+
+[data-theme="light"] {
+  --volt: #7AB800;
+  --bg: #F5F5F5;
+  --surface: #FFFFFF;
+  --card: #FFFFFF;
+  --border: #E5E5E5;
+  --text: #111111;
+  --text2: #444444;
+  --muted: #999999;
+  --swoosh: #111111;
+  --header-bg: #FFFFFF;
+  --header-border: #E5E5E5;
+  --tooltip-bg: #FFFFFF;
+  --tooltip-border: #DDDDDD;
+  --tooltip-label: #888888;
+  --row-alt: #FAFAFA;
+  --row-hover: #F0F7E0;
+  --row-selected: #EEF8D0;
+  --select-bg: #F5F5F5;
+  --select-border: #DDDDDD;
+  --page-active-bg: #111111;
+  --page-active-text: #FFFFFF;
+  --page-btn-bg: #F0F0F0;
+  --metric-value: #7AB800;
+  --chart-grid: #EEEEEE;
+  --y2025: #9A9A9A;
+  --y2026: #7AB800;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  transition: background 0.25s, color 0.25s;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
