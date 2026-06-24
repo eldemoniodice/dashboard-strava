@@ -46,7 +46,7 @@ export default function App() {
       <header className="app-header">
         <div className="header-left">
           <img
-            src={theme === 'light' ? '/branding/nike-logo-black.png' : '/branding/nike-logo-white.png'}
+            src={`${import.meta.env.BASE_URL}branding/${theme === 'light' ? 'nike-logo-black.png' : 'nike-logo-white.png'}`}
             alt="Nike"
             className="header-logo"
           />

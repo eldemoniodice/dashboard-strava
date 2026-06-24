@@ -20,6 +20,14 @@ function fmtPace(p) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+function fmtDuration(min) {
+  if (!min || min <= 0) return '-'
+  const h = Math.floor(min / 60)
+  const m = Math.floor(min % 60)
+  const s = Math.round((min % 1) * 60)
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`
+}
+
 function parseActivityDate(str) {
   // "Jun 22, 2026, 2:41:54 PM"
   const m = str.trim().match(/^(\w{3})\s+(\d{1,2}),\s+(\d{4}),\s+(\d{1,2}):(\d{2}):(\d{2})\s+(AM|PM)$/)
@@ -207,6 +215,7 @@ export async function fetchDashboardData(onProgress) {
   const withPace = runs.filter(r => r.pace > 0)
   const bestR = withPace.length ? withPace.reduce((a,b) => a.pace < b.pace ? a : b) : null
   const longestR = runs.length ? runs.reduce((a,b) => a.dist > b.dist ? a : b) : null
+  const longestTimeR = runs.length ? runs.reduce((a,b) => a.time_min > b.time_min ? a : b) : null
 
   return {
     runs,
@@ -227,6 +236,8 @@ export async function fetchDashboardData(onProgress) {
       bestPaceDate: bestR ? bestR.date : '-',
       longestDist: longestR ? longestR.dist : 0,
       longestDate: longestR ? longestR.date : '-',
+      longestTime: longestTimeR ? fmtDuration(longestTimeR.time_min) : '-',
+      longestTimeDate: longestTimeR ? longestTimeR.date : '-',
     },
   }
 }

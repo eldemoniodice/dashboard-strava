@@ -5,6 +5,7 @@ export default function KpiCards({ kpis }) {
     { label: 'AVG DISTANCE', value: kpis.avgDist.toFixed(2), unit: 'km / run' },
     { label: 'BEST PACE', value: kpis.bestPace, unit: 'min/km', sub: kpis.bestPaceDate },
     { label: 'LONGEST RUN', value: kpis.longestDist.toFixed(2), unit: 'km', sub: kpis.longestDate },
+    { label: 'LONGEST DURATION', value: kpis.longestTime, unit: 'h:mm:ss', sub: kpis.longestTimeDate },
   ]
 
   return (
