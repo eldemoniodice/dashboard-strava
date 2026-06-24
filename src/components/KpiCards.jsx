@@ -8,13 +8,13 @@ export default function KpiCards({ kpis }) {
   ]
 
   return (
-    <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:12 }}>
+    <div className="kpi-grid">
       {cards.map(c => (
-        <div key={c.label} style={styles.card}>
-          <div style={styles.label}>{c.label}</div>
-          <div style={styles.value}>{c.value}</div>
-          <div style={styles.unit}>{c.unit}</div>
-          {c.sub && <div style={styles.sub}>{c.sub}</div>}
+        <div key={c.label} className="kpi-card" style={styles.card}>
+          <div className="kpi-label" style={styles.label}>{c.label}</div>
+          <div className="kpi-value" style={styles.value}>{c.value}</div>
+          <div className="kpi-unit" style={styles.unit}>{c.unit}</div>
+          {c.sub && <div className="kpi-sub" style={styles.sub}>{c.sub}</div>}
         </div>
       ))}
     </div>

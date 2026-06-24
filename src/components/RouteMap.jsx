@@ -77,7 +77,7 @@ export default function RouteMap({ runs, selectedRun, theme }) {
           </div>
         )}
       </div>
-      <div ref={mapRef} style={{ flex:1, minHeight:480 }} />
+      <div ref={mapRef} className="route-map-canvas" style={{ flex:1, minHeight:480 }} />
     </div>
   )
 }

@@ -52,7 +52,7 @@ export default function App() {
           />
           <span className="header-title">NIKE RUN CLUB</span>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:20 }}>
+        <div className="header-right">
           <div className="header-sub">PERFORMANCE DASHBOARD</div>
           <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className="theme-toggle">
             {theme === 'dark' ? '☀' : '●'}

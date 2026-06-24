@@ -38,8 +38,8 @@ export default function ActivityLog({ runs, onSelect, selectedRun }) {
   }
 
   return (
-    <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:4, padding:'20px 16px', display:'flex', flexDirection:'column', overflow:'hidden', transition:'background 0.25s, border-color 0.25s' }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+    <div className="activity-log-card" style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:4, padding:'20px 16px', display:'flex', flexDirection:'column', overflow:'hidden', transition:'background 0.25s, border-color 0.25s' }}>
+      <div className="activity-log-header" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
         <div style={s.title}>RUN HISTORY</div>
         <div style={{ display:'flex', gap:8 }}>
           <Sel value={yearFilter} onChange={e => changeYear(e.target.value)}>
@@ -53,8 +53,8 @@ export default function ActivityLog({ runs, onSelect, selectedRun }) {
         </div>
       </div>
 
-      <div style={{ flex:1, overflowY:'auto' }}>
-        <table style={{ width:'100%', borderCollapse:'collapse' }}>
+      <div style={{ flex:1, overflowY:'auto', overflowX:'auto' }}>
+        <table style={{ width:'100%', borderCollapse:'collapse', minWidth:420 }}>
           <thead>
             <tr>{['Date','Name','Dist (km)','Pace','Time'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
           </thead>
@@ -80,7 +80,7 @@ export default function ActivityLog({ runs, onSelect, selectedRun }) {
       </div>
 
       {totalPages > 1 && (
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:12, paddingTop:12, borderTop:'1px solid var(--border)' }}>
+        <div className="activity-log-pagination" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:12, paddingTop:12, borderTop:'1px solid var(--border)' }}>
           <div style={{ fontFamily:'Barlow Condensed, sans-serif', fontSize:11, color:'var(--muted)', letterSpacing:1 }}>
             {filtered.length} RUNS · PAGE {page_} OF {totalPages}
           </div>

@@ -76,7 +76,7 @@ export default function Charts({ data }) {
   const dowData = dowLabels.map((label, i) => ({ label, count: dowCounts[i] }))
 
   return (
-    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+    <div className="charts-grid">
 
       <ChartCard title="KM Per Month — Year Over Year">
         <ResponsiveContainer width="100%" height={220}>

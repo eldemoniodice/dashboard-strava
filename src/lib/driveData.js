@@ -138,7 +138,8 @@ export async function fetchDashboardData(onProgress) {
 
   onProgress?.(`Descargando rutas GPS (0/${runs.length})...`)
   let done = 0
-  const CONCURRENCY = 6
+  const CONCURRENCY = 3
+  const BATCH_DELAY_MS = 250
   for (let i = 0; i < runs.length; i += CONCURRENCY) {
     const batch = runs.slice(i, i + CONCURRENCY)
     await Promise.all(batch.map(async r => {
@@ -154,6 +155,9 @@ export async function fetchDashboardData(onProgress) {
       onProgress?.(`Descargando rutas GPS (${done}/${runs.length})...`)
       delete r._fitName
     }))
+    if (i + CONCURRENCY < runs.length) {
+      await new Promise(res => setTimeout(res, BATCH_DELAY_MS))
+    }
   }
 
   // ---- Aggregations (mirrors generate_data.py) ----
