@@ -201,13 +201,24 @@ export async function fetchDashboardData(onProgress) {
   const perYear = {}
   years.forEach(y => {
     const yr = runs.filter(r => r.year === y)
-    const paces = yr.filter(r => r.pace > 0).map(r => r.pace)
-    perYear[String(y)] = {
-      km: Math.round(yr.reduce((a,r)=>a+r.dist,0) * 10) / 10,
-      runs: yr.length,
-      avgPace: paces.length ? fmtPace(paces.reduce((a,b)=>a+b,0)/paces.length) : '-',
-    }
-  })
+
+  // Distancia total del año
+    const totalYearKm = yr.reduce((a, r) => a + r.dist, 0)
+
+  // Tiempo total en movimiento del año (minutos)
+    const totalYearMinutes = yr.reduce((a, r) => a + r.time_min, 0)
+
+  // Pace real del año = tiempo total / distancia total
+    const yearAvgPace = totalYearKm > 0
+    ? totalYearMinutes / totalYearKm
+    : 0
+
+  perYear[String(y)] = {
+    km: Math.round(totalYearKm * 10) / 10,
+    runs: yr.length,
+    avgPace: yearAvgPace > 0 ? fmtPace(yearAvgPace) : '-',
+  }
+})
 
   const totalKm = Math.round(runs.reduce((a,r)=>a+r.dist,0) * 10) / 10
   const totalRuns = runs.length
