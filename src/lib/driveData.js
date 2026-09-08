@@ -133,7 +133,7 @@ export async function fetchDashboardData(onProgress) {
       dist: Math.round(distKm * 100) / 100,
       pace: Math.round(pace * 100) / 100,
       paceStr: fmtPace(pace),
-      time_min: Math.round((movingS / 60) * 10) / 10,
+      time_min: movingS / 60,
       year: dt.getFullYear(),
       month: dt.getMonth() + 1,
       monthLabel: `${MES_EN[dt.getMonth()]} ${dt.getFullYear()}`,
