@@ -38,7 +38,6 @@ function pad2(n) { return String(n).padStart(2, '0') }
 function ymd(d) { return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}` }
 
 async function listDriveFiles() {
-  // Ahora solo buscamos el archivo activities_limpio.csv, sin escanear carpetas
   const rootRes = await fetch(`${DRIVE_API}/files?q='${FOLDER_ID}'+in+parents&fields=files(id,name)&key=${API_KEY}&pageSize=100`)
   const rootData = await rootRes.json()
   if (rootData.error) throw new Error(`Drive API error: ${rootData.error.message}`)
@@ -75,20 +74,23 @@ export async function fetchDashboardData(onProgress) {
   const typeIdx = headers.indexOf('Activity Type')
   const dateIdx = headers.indexOf('Activity Date')
   const nameIdx = headers.indexOf('Activity Name')
-  const gpsIdx = headers.indexOf('GPS_Path') // Nueva columna con coordenadas
+  const gpsIdx = headers.indexOf('GPS_Path')
 
   const runs = []
   for (const row of rows.slice(1)) {
     if ((row[typeIdx] || '').trim().toLowerCase() !== 'run') continue
     const dt = parseActivityDate(row[dateIdx] || '')
     if (!dt) continue
-    const distKm = parseFloat(row[distIdx]) || 0
+    
+    // Todos los valores vienen en metros desde el nuevo CSV, se dividen directamente.
+    let distKm = parseFloat(row[distIdx]) || 0
+    distKm = distKm / 1000
+    
     if (distKm < 0.1) continue
     const movingS = parseFloat(row[timeIdx]) || 0
     const pace = distKm > 0 ? (movingS / 60) / distKm : 0
     const key = ymd(dt)
 
-    // Convertimos el texto de la columna a un Array de Javascript
     let rutaGps = []
     if (gpsIdx !== -1 && row[gpsIdx]) {
       try {
@@ -109,13 +111,12 @@ export async function fetchDashboardData(onProgress) {
       month: dt.getMonth() + 1,
       monthLabel: `${MES_EN[dt.getMonth()]} ${dt.getFullYear()}`,
       ym: `${dt.getFullYear()}-${pad2(dt.getMonth()+1)}`,
-      gps: rutaGps, // Asignación directa, sin descargas extra
+      gps: rutaGps, 
     })
   }
 
   runs.sort((a, b) => a.date.localeCompare(b.date))
 
-  // ---- Aggregations (mirrors generate_data.py) ----
   const years = [...new Set(runs.map(r => r.year))].sort()
   const monthsRange = Array.from({ length: 12 }, (_, i) => i + 1)
 
