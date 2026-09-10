@@ -1,9 +1,4 @@
 import Papa from 'papaparse'
-import pako from 'pako'
-import FitParser from 'fit-file-parser'
-import { Buffer } from 'buffer'
-
-if (typeof window !== 'undefined' && !window.Buffer) window.Buffer = Buffer
 
 const API_KEY    = import.meta.env.VITE_GOOGLE_API_KEY
 const FOLDER_ID  = import.meta.env.VITE_DRIVE_FOLDER_ID
@@ -29,7 +24,6 @@ function fmtDuration(min) {
 }
 
 function parseActivityDate(str) {
-  // "Jun 22, 2026, 2:41:54 PM"
   const m = str.trim().match(/^(\w{3})\s+(\d{1,2}),\s+(\d{4}),\s+(\d{1,2}):(\d{2}):(\d{2})\s+(AM|PM)$/)
   if (!m) return null
   const [, mon, day, year, hh, mm, ss, ampm] = m
@@ -44,54 +38,22 @@ function pad2(n) { return String(n).padStart(2, '0') }
 function ymd(d) { return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}` }
 
 async function listDriveFiles() {
-  // List CSV (root) and the "activities" subfolder + its contents in one go via recursive query
-  const rootRes = await fetch(`${DRIVE_API}/files?q='${FOLDER_ID}'+in+parents&fields=files(id,name,mimeType)&key=${API_KEY}&pageSize=1000`)
+  // Ahora solo buscamos el archivo activities_limpio.csv, sin escanear carpetas
+  const rootRes = await fetch(`${DRIVE_API}/files?q='${FOLDER_ID}'+in+parents&fields=files(id,name)&key=${API_KEY}&pageSize=100`)
   const rootData = await rootRes.json()
   if (rootData.error) throw new Error(`Drive API error: ${rootData.error.message}`)
 
   const csvFile = rootData.files.find(f => f.name === 'activities_limpio.csv')
-  const activitiesFolder = rootData.files.find(f => f.name === 'activities' && f.mimeType === 'application/vnd.google-apps.folder')
   if (!csvFile) throw new Error('No se encontró activities_limpio.csv en la carpeta de Drive')
-  if (!activitiesFolder) throw new Error('No se encontró la subcarpeta activities en Drive')
 
-  let fitFiles = []
-  let pageToken = null
-  do {
-    const url = `${DRIVE_API}/files?q='${activitiesFolder.id}'+in+parents&fields=files(id,name),nextPageToken&pageSize=1000&key=${API_KEY}` + (pageToken ? `&pageToken=${pageToken}` : '')
-    const res = await fetch(url)
-    const data = await res.json()
-    if (data.error) throw new Error(`Drive API error: ${data.error.message}`)
-    fitFiles = fitFiles.concat(data.files)
-    pageToken = data.nextPageToken
-  } while (pageToken)
-
-  return { csvFileId: csvFile.id, fitFiles }
+  return { csvFileId: csvFile.id }
 }
 
-async function downloadDriveFile(fileId, asBinary = false) {
+async function downloadDriveFile(fileId) {
   const url = `${DRIVE_API}/files/${fileId}?alt=media&key=${API_KEY}`
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Error descargando archivo ${fileId}: ${res.status}`)
-  return asBinary ? res.arrayBuffer() : res.text()
-}
-
-async function extractGps(fitGzBuffer) {
-  try {
-    const gunzipped = pako.ungzip(new Uint8Array(fitGzBuffer))
-    const fitParser = new FitParser({ force: true, mode: 'list' })
-    const data = await fitParser.parseAsync(Buffer.from(gunzipped))
-    const records = data.records || []
-    let pts = records
-      .filter(r => r.position_lat != null && r.position_long != null)
-      .map(r => [Math.round(r.position_lat * 1e6) / 1e6, Math.round(r.position_long * 1e6) / 1e6])
-    if (pts.length > 150) {
-      const step = Math.floor(pts.length / 150)
-      pts = pts.filter((_, i) => i % step === 0)
-    }
-    return pts
-  } catch {
-    return []
-  }
+  return res.text()
 }
 
 export async function fetchDashboardData(onProgress) {
@@ -99,21 +61,21 @@ export async function fetchDashboardData(onProgress) {
     throw new Error('Falta configurar VITE_GOOGLE_API_KEY y VITE_DRIVE_FOLDER_ID en el archivo .env')
   }
 
-  onProgress?.('Listando archivos de Drive...')
-  const { csvFileId, fitFiles } = await listDriveFiles()
-  const fitByName = new Map(fitFiles.map(f => [f.name, f.id]))
+  onProgress?.('Buscando activities_limpio.csv en Drive...')
+  const { csvFileId } = await listDriveFiles()
 
-  onProgress?.('Descargando activities.csv...')
+  onProgress?.('Descargando y procesando datos (1/1)...')
   const csvText = await downloadDriveFile(csvFileId)
   const parsed = Papa.parse(csvText, { header: false })
   const rows = parsed.data.filter(r => r.length > 1)
   const headers = rows[0]
+  
   const distIdx = headers.indexOf('Distance')
   const timeIdx = headers.indexOf('Moving Time')
   const typeIdx = headers.indexOf('Activity Type')
   const dateIdx = headers.indexOf('Activity Date')
   const nameIdx = headers.indexOf('Activity Name')
-  const fileIdx = headers.indexOf('Filename')
+  const gpsIdx = headers.indexOf('GPS_Path') // Nueva columna con coordenadas
 
   const runs = []
   for (const row of rows.slice(1)) {
@@ -125,7 +87,16 @@ export async function fetchDashboardData(onProgress) {
     const movingS = parseFloat(row[timeIdx]) || 0
     const pace = distKm > 0 ? (movingS / 60) / distKm : 0
     const key = ymd(dt)
-    const fname = (row[fileIdx] || '').trim().replace(/^activities\//, '')
+
+    // Convertimos el texto de la columna a un Array de Javascript
+    let rutaGps = []
+    if (gpsIdx !== -1 && row[gpsIdx]) {
+      try {
+        rutaGps = JSON.parse(row[gpsIdx])
+      } catch (e) {
+        rutaGps = []
+      }
+    }
 
     runs.push({
       date: key,
@@ -138,35 +109,11 @@ export async function fetchDashboardData(onProgress) {
       month: dt.getMonth() + 1,
       monthLabel: `${MES_EN[dt.getMonth()]} ${dt.getFullYear()}`,
       ym: `${dt.getFullYear()}-${pad2(dt.getMonth()+1)}`,
-      _fitName: fname,
+      gps: rutaGps, // Asignación directa, sin descargas extra
     })
   }
 
   runs.sort((a, b) => a.date.localeCompare(b.date))
-
-  onProgress?.(`Descargando rutas GPS (0/${runs.length})...`)
-  let done = 0
-  const CONCURRENCY = 3
-  const BATCH_DELAY_MS = 250
-  for (let i = 0; i < runs.length; i += CONCURRENCY) {
-    const batch = runs.slice(i, i + CONCURRENCY)
-    await Promise.all(batch.map(async r => {
-      const fileId = fitByName.get(r._fitName)
-      r.gps = []
-      if (fileId) {
-        try {
-          const buf = await downloadDriveFile(fileId, true)
-          r.gps = await extractGps(buf)
-        } catch { /* skip run without usable GPS */ }
-      }
-      done++
-      onProgress?.(`Descargando rutas GPS (${done}/${runs.length})...`)
-      delete r._fitName
-    }))
-    if (i + CONCURRENCY < runs.length) {
-      await new Promise(res => setTimeout(res, BATCH_DELAY_MS))
-    }
-  }
 
   // ---- Aggregations (mirrors generate_data.py) ----
   const years = [...new Set(runs.map(r => r.year))].sort()
@@ -201,24 +148,16 @@ export async function fetchDashboardData(onProgress) {
   const perYear = {}
   years.forEach(y => {
     const yr = runs.filter(r => r.year === y)
-
-  // Distancia total del año
     const totalYearKm = yr.reduce((a, r) => a + r.dist, 0)
-
-  // Tiempo total en movimiento del año (minutos)
     const totalYearMinutes = yr.reduce((a, r) => a + r.time_min, 0)
+    const yearAvgPace = totalYearKm > 0 ? totalYearMinutes / totalYearKm : 0
 
-  // Pace real del año = tiempo total / distancia total
-    const yearAvgPace = totalYearKm > 0
-    ? totalYearMinutes / totalYearKm
-    : 0
-
-  perYear[String(y)] = {
-    km: Math.round(totalYearKm * 10) / 10,
-    runs: yr.length,
-    avgPace: yearAvgPace > 0 ? fmtPace(yearAvgPace) : '-',
-  }
-})
+    perYear[String(y)] = {
+      km: Math.round(totalYearKm * 10) / 10,
+      runs: yr.length,
+      avgPace: yearAvgPace > 0 ? fmtPace(yearAvgPace) : '-',
+    }
+  })
 
   const totalKm = Math.round(runs.reduce((a,r)=>a+r.dist,0) * 10) / 10
   const totalRuns = runs.length
