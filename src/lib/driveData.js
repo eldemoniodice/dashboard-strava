@@ -49,9 +49,9 @@ async function listDriveFiles() {
   const rootData = await rootRes.json()
   if (rootData.error) throw new Error(`Drive API error: ${rootData.error.message}`)
 
-  const csvFile = rootData.files.find(f => f.name === 'activities.csv')
+  const csvFile = rootData.files.find(f => f.name === 'activities_limpio.csv')
   const activitiesFolder = rootData.files.find(f => f.name === 'activities' && f.mimeType === 'application/vnd.google-apps.folder')
-  if (!csvFile) throw new Error('No se encontró activities.csv en la carpeta de Drive')
+  if (!csvFile) throw new Error('No se encontró activities_limpio.csv en la carpeta de Drive')
   if (!activitiesFolder) throw new Error('No se encontró la subcarpeta activities en Drive')
 
   let fitFiles = []
